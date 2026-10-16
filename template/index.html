@@ -1,0 +1,461 @@
+<!doctype html>
+<html lang="en">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<!-- EDIT: every text marked EDIT. Needs next to this file: frames.json (from blender/build_scene.py), grain.png,
+     frames-webp/<v>/{960,<width>}/ (tools/pack_frames.py), optional frames-h264/<v>/ (tools/pack_h264.py) -->
+<title>Brand Room</title>
+<meta name="description" content="EDIT: one sentence about the room.">
+<link rel="icon" href="data:,">
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+<link href="https://fonts.googleapis.com/css2?family=Cormorant+Garamond:wght@400;500&family=Inter:wght@300;400;500&display=swap" rel="stylesheet">
+<style>
+  :root {
+    --ink: #f4efe6;
+    --dim: rgba(244, 239, 230, .72);
+    --gold: #e3b268;
+    --shade: rgba(16, 12, 9, .45);
+    --bg: #110e0b;
+  }
+  * { box-sizing: border-box; }
+  html { scrollbar-width: none; }
+  html::-webkit-scrollbar { display: none; }
+  body { margin: 0; background: var(--bg); color: var(--ink); font: 300 15px/1.55 Inter, system-ui, sans-serif; }
+  #track { height: 600vh; }
+  /* lvh: the canvas keeps its size when a mobile URL bar shows or hides, so it is never reallocated mid-scroll */
+  #view { position: fixed; top: 0; left: 0; width: 100%; height: 100vh; height: 100lvh; display: block; }
+  #film { position: fixed; inset: 0; pointer-events: none; background: radial-gradient(ellipse at center, transparent 55%, rgba(0, 0, 0, .38) 100%); }
+  #grain { position: fixed; inset: -50%; pointer-events: none; background: url(grain.png); opacity: .07; mix-blend-mode: overlay; animation: grain 1s steps(6) infinite; }
+  @keyframes grain { 0% { transform: translate(0, 0) } 20% { transform: translate(-7%, 4%) } 40% { transform: translate(5%, -6%) }
+    60% { transform: translate(-3%, 8%) } 80% { transform: translate(8%, 2%) } 100% { transform: translate(0, 0) } }
+  /* scrims keep white type readable over the bright bar top */
+  #scrim { position: fixed; inset: 0; pointer-events: none;
+    background: linear-gradient(to top, rgba(14, 11, 8, .6), transparent 40%), linear-gradient(to bottom, rgba(14, 11, 8, .4), transparent 20%); }
+  #halo { position: fixed; inset: 0; pointer-events: none; opacity: 0; transition: opacity .8s ease;
+    background: radial-gradient(ellipse 50% 42% at 50% 50%, rgba(14, 11, 8, .55), transparent 100%); }
+  #halo.on { opacity: 1; }
+
+  header { position: fixed; top: 22px; left: 28px; right: 28px; display: flex; justify-content: space-between; align-items: baseline; pointer-events: none; text-shadow: 0 1px 12px var(--shade); }
+  .brand { font: 500 24px/1 "Cormorant Garamond", serif; letter-spacing: .14em; text-transform: uppercase; }
+  .meta { font-size: 11px; letter-spacing: .2em; text-transform: uppercase; color: var(--dim); }
+
+  /* fade out quicker than in, and fade in a beat later, so two captions never sit on top of each other */
+  .cap { position: fixed; left: 28px; bottom: 56px; max-width: 420px; opacity: 0; transform: translateY(14px); transition: opacity .35s ease, transform .35s ease; pointer-events: none; text-shadow: 0 1px 16px var(--shade); }
+  .cap.on { opacity: 1; transform: none; transition: opacity .7s ease .18s, transform .7s ease .18s; }
+  .cap .n { font-size: 11px; letter-spacing: .22em; color: var(--gold); text-transform: uppercase; }
+  .cap h2 { margin: 6px 0 8px; font: 400 clamp(30px, 4.2vw, 52px)/1.04 "Cormorant Garamond", serif; text-wrap: balance; }
+  .cap p { margin: 0; color: var(--dim); text-wrap: pretty; }
+  .cap.intro { left: 50%; right: auto; bottom: auto; top: 50%; transform: translate(-50%, calc(-50% + 14px)); text-align: center; width: max-content; max-width: min(760px, calc(100vw - 32px)); }
+  .cap.intro p { max-width: 30em; margin: 0 auto; }
+  .cap.intro.on { transform: translate(-50%, -50%); }
+  .cap.intro h2 { font-size: clamp(46px, 7.4vw, 96px); letter-spacing: .02em; }
+  @media (min-width: 641px) { .cap.intro h2 { white-space: nowrap; } }
+  .hint { margin-top: 20px; font-size: 11px; letter-spacing: .24em; text-transform: uppercase; color: var(--dim); }
+  .hint::after { content: ""; display: block; width: 1px; height: 38px; margin: 12px auto 0; background: linear-gradient(var(--gold), transparent); animation: drip 1.8s ease-in-out infinite; transform-origin: top; }
+  @keyframes drip { 0% { transform: scaleY(0) } 60% { transform: scaleY(1) } 100% { transform: scaleY(1); opacity: 0 } }
+
+  /* hotspots: positioned every frame from the 3D anchor projected into the render */
+  .spot { position: fixed; left: 0; top: 0; width: 44px; height: 44px; margin: -22px 0 0 -22px; border: 0; padding: 0; background: none; cursor: pointer;
+    opacity: 0; pointer-events: none; transition: opacity .4s ease; will-change: transform; }
+  .spot.on { opacity: 1; pointer-events: auto; }
+  .spot::before { content: ""; position: absolute; inset: 13px; border-radius: 50%; background: var(--gold); box-shadow: 0 0 18px 4px rgba(227, 178, 104, .55); }
+  .spot::after { content: ""; position: absolute; inset: 6px; border-radius: 50%; border: 1px solid rgba(244, 239, 230, .85); animation: ring 2.2s ease-out infinite; }
+  .spot:hover::before, .spot:focus-visible::before { background: var(--ink); }
+  .spot:focus-visible { outline: 1px solid var(--ink); outline-offset: 4px; border-radius: 50%; }
+  @keyframes ring { 0% { transform: scale(.6); opacity: 1 } 100% { transform: scale(1.5); opacity: 0 } }
+
+  #card { position: fixed; right: 28px; bottom: 56px; width: min(340px, calc(100vw - 32px)); padding: 22px 24px 24px; background: rgba(17, 14, 11, .78);
+    backdrop-filter: blur(10px); -webkit-backdrop-filter: blur(10px); border: 1px solid rgba(244, 239, 230, .16); opacity: 0; transform: translateY(12px);
+    transition: opacity .35s ease, transform .35s ease; pointer-events: none; }
+  #card.on { opacity: 1; transform: none; pointer-events: auto; }
+  #card .n { font-size: 11px; letter-spacing: .22em; color: var(--gold); text-transform: uppercase; }
+  #card h3 { margin: 6px 0 8px; font: 400 30px/1.08 "Cormorant Garamond", serif; }
+  #card p { margin: 0; color: var(--dim); }
+  #card button { position: absolute; top: 10px; right: 10px; width: 32px; height: 32px; border: 0; background: none; color: var(--dim); font: 300 22px/1 Inter, sans-serif; cursor: pointer; }
+  #card button:hover { color: var(--ink); }
+
+  #bar { position: fixed; left: 0; bottom: 0; height: 2px; width: 100%; transform-origin: left; transform: scaleX(0); background: var(--gold); opacity: .8; }
+
+  #load { position: fixed; inset: 0; display: grid; place-items: center; background: var(--bg); transition: opacity .8s ease; z-index: 5; }
+  #load.done { opacity: 0; pointer-events: none; }
+  #load .t { font: 500 22px "Cormorant Garamond", serif; letter-spacing: .16em; text-transform: uppercase; text-align: center; }
+  #load .p { margin-top: 10px; font-size: 11px; letter-spacing: .24em; color: var(--dim); text-align: center; }
+
+  @media (max-width: 640px) {
+    header { left: 16px; right: 16px; top: 16px; }
+    .meta { display: none; }
+    .cap { left: 16px; right: 16px; bottom: 40px; max-width: none; }
+    #card { right: 16px; left: 16px; width: auto; bottom: 40px; }
+  }
+  /* phone held sideways: short screen, keep the type compact */
+  @media (max-height: 500px) {
+    header { top: 14px; }
+    .cap { bottom: 26px; max-width: 440px; }
+    .cap h2 { font-size: 30px; margin: 4px 0 6px; }
+    .cap p { font-size: 14px; }
+    .cap.intro h2 { font-size: 54px; }
+    #card { bottom: 20px; }
+  }
+  @media (prefers-reduced-motion: reduce) {
+    .cap, .cap.on { transform: none; transition: opacity .3s ease; }
+    .cap.intro, .cap.intro.on { transform: translate(-50%, -50%); }
+    #grain, .spot::after, .hint::after { animation: none; }
+  }
+</style>
+</head>
+<body>
+<canvas id="view"></canvas>
+<div id="grain"></div>
+<div id="film"></div>
+<div id="scrim"></div>
+<div id="halo"></div>
+<div id="track"></div>
+
+<header>
+  <div class="brand">Brand</div><!-- EDIT -->
+  <div class="meta">The Room · Product A × Product B</div><!-- EDIT -->
+</header>
+
+<!-- EDIT captions. data-from / data-to: scroll progress 0..1. data-key="k": around camera keyframe k of frames.json,
+     shown from data-before ahead of it until data-after past it (scroll fractions) -->
+<div class="cap intro" data-from="0" data-to="0.06">
+  <div class="n">Est. 2026</div>
+  <h2>Brand Room</h2>
+  <p>One sentence that sets the scene.</p>
+  <div class="hint">Scroll to walk in</div>
+</div>
+<div class="cap" data-key="1" data-before="0.16" data-after="0.12">
+  <div class="n">01 · First stop</div>
+  <h2>What you see at keyframe 1</h2>
+  <p>Short line. Tap the light to read about it.</p>
+</div>
+<div class="cap" data-key="2" data-before="0.12" data-after="0.1">
+  <div class="n">02 · Second stop</div>
+  <h2>What you see at keyframe 2</h2>
+  <p>Short line about the light or the material.</p>
+</div>
+<div class="cap" data-from="0.9" data-to="1.01">
+  <div class="n">03 · The hero</div>
+  <h2>The last shot</h2>
+  <p>Call to action.</p>
+</div>
+
+<div id="spots"></div>
+<div id="card" role="dialog" aria-modal="false" aria-labelledby="card-t">
+  <button type="button" aria-label="Close">×</button>
+  <div class="n" id="card-n"></div>
+  <h3 id="card-t"></h3>
+  <p id="card-p"></p>
+</div>
+<div id="bar"></div>
+
+<div id="load"><div><div class="t">Brand</div><!-- EDIT --><div class="p" id="pct">0%</div></div></div>
+
+<script>
+(async () => {
+  const meta = await (await fetch('frames.json')).json();
+  // phones play every other frame: the full set, decoded at screen size, would not fit in phone memory
+  const phone = matchMedia('(pointer: coarse)').matches && Math.min(screen.width, screen.height) < 820;
+  const STEP = phone ? 2 : 1;
+  const N = Math.floor((meta.count - 1) / STEP) + 1, FW = meta.width, FH = meta.height;
+  const canvas = document.getElementById('view');
+  const ctx = canvas.getContext('2d', { alpha: false });
+  const frames = new Array(N);
+  const reduce = matchMedia('(prefers-reduced-motion: reduce)');
+  const touch = matchMedia('(hover: none)');
+  const name = i => 'f' + String(i * STEP).padStart(3, '0');
+  const dir = w => `frames-webp/${meta.v}/${w}/`;
+
+  // desktop with WebCodecs: every frame is a small all-intra H.264 chunk, hardware-decoded on demand straight into
+  // GPU memory, so the walk stays sharp (full render size) and smooth while it moves. Phones and older browsers use WebP.
+  let vc = null;
+  if (!phone && 'VideoDecoder' in window) {
+    try {
+      const codec = (await (await fetch(`frames-h264/${meta.v}/codec.txt`)).text()).trim();
+      const cfg = { codec, codedWidth: FW, codedHeight: FH, optimizeForLatency: true };
+      if ((await VideoDecoder.isConfigSupported(cfg)).supported) vc = cfg;
+    } catch (e) { /* no H.264 set: WebP */ }
+  }
+
+  // ---- loading: the walk plays from light 960 px frames held in memory (no video seeking). They stay smooth on
+  // integrated GPUs; ~300 frames at full size do not. The sharp full-size version is fetched only for the frame you stop on ----
+  const saveData = !!(navigator.connection && navigator.connection.saveData);
+  // device pixels the frame is stretched over (cover fit, dpr capped like the canvas)
+  const span = () => Math.max(innerWidth, innerHeight * FW / FH) * Math.min(devicePixelRatio || 1, 2);
+  const wantHi = () => !vc && !saveData && span() > 1100;
+
+  function fetchImg(url) {
+    const img = new Image();
+    img.src = url;
+    return img.decode().then(() => img, () => null);
+  }
+  const chunks = new Array(N);
+  async function load(i) {
+    if (vc) {
+      const r = await fetch(`frames-h264/${meta.v}/${name(i)}.h264`).catch(() => null);
+      if (!r || !r.ok) return null;
+      chunks[i] = await r.arrayBuffer();
+      kick();
+      return chunks[i];
+    }
+    // one retry: Windows can briefly run out of socket buffers when many frames are in flight
+    const url = dir(960) + name(i) + '.webp';
+    const img = await fetchImg(url) || await new Promise(r => setTimeout(r, 600)).then(() => fetchImg(url));
+    if (img) {
+      frames[i] = img;
+      kick();
+    }
+    return img;
+  }
+  async function pool(next, job, n = 6) {
+    await Promise.all(Array.from({ length: n }, async () => {
+      for (let i = next(); i !== undefined; i = next()) await job(i);
+    }));
+  }
+
+  // coarse-to-fine: every 16th frame first, so the whole walk scrubs before everything arrives
+  const order = [];
+  for (let step = 16; step >= 1; step = Math.floor(step / 2)) {
+    for (let i = 0; i < N; i += step) if (!order.includes(i)) order.push(i);
+  }
+  const pct = document.getElementById('pct');
+  const loader = document.getElementById('load');
+  let loaded = 0;
+  const lo = order.slice();
+  pool(() => lo.shift(), async i => {
+    if (await load(i)) loaded++;
+    pct.textContent = Math.round(100 * loaded / N) + '%';
+    if (loaded >= Math.min(N, 24)) loader.classList.add('done');
+  }).then(() => loader.classList.add('done'));
+
+  // sharp frames for the view at rest: a few kept, keyed by frame index
+  const hi = new Map();
+  let hiWant = -1, hiA = 0;
+  function wantSharp(k) {
+    if (k === hiWant || !wantHi()) return;
+    hiWant = k;
+    if (hi.has(k)) return kick();
+    fetchImg(dir(FW) + name(k) + '.webp').then(img => {
+      if (!img) return;
+      hi.set(k, img);
+      if (hi.size > 8) hi.delete(hi.keys().next().value);
+      kick();
+    });
+  }
+
+  // vc: decoded frames live in frames[] (VideoFrame, GPU memory); only the few around the view are kept open
+  const decoded = new Set(), pending = new Set();
+  const dec = vc && new VideoDecoder({
+    output: f => {
+      const i = f.timestamp;
+      pending.delete(i);
+      if (frames[i]) f.close();
+      else { frames[i] = f; decoded.add(i); kick(); }
+    },
+    error: e => console.error(e),
+  });
+  if (dec) dec.configure(vc);
+  function want(i) {
+    if (i < 0 || i >= N || frames[i] || pending.has(i) || !chunks[i]) return;
+    pending.add(i);
+    dec.decode(new EncodedVideoChunk({ type: 'key', timestamp: i, data: chunks[i] }));
+  }
+  function keepOnly(lo, hi) {
+    for (const k of decoded) {
+      if (k >= lo && k <= hi) continue;
+      frames[k].close();
+      frames[k] = undefined;
+      decoded.delete(k);
+    }
+  }
+
+  // nearest loaded frame at or around i
+  function nearest(i) {
+    for (let d = 0; d < N; d++) {
+      if (frames[i - d]) return frames[i - d];
+      if (frames[i + d]) return frames[i + d];
+    }
+    return null;
+  }
+
+  // ---- drawing: cover fit, a little overscan so the hover tilt never shows an edge ----
+  const ZOOM = 1.05, TILT = 0.022;          // max shift 2.2 % of the screen, under the 2.5 % overscan margin
+  const tiltOn = () => !touch.matches && !reduce.matches;
+  let shown = {}, at = { cur: -1, tx: 0, ty: 0, w: 0, h: 0 };
+  let tilt = { x: 0, y: 0 }, aim = { x: 0, y: 0 };
+
+  function fit() {
+    const r = canvas.getBoundingClientRect(), dpr = Math.min(devicePixelRatio || 1, 2);
+    const w = Math.round(r.width * dpr), h = Math.round(r.height * dpr);
+    if (w !== canvas.width || h !== canvas.height) {
+      canvas.width = w;
+      canvas.height = h;
+      // 'high' makes Chrome build mipmaps for every new frame it uploads, which stalls scrolling on integrated GPUs
+      ctx.imageSmoothingQuality = 'low';
+    }
+    if (cur >= 0) render(true);
+    kick();
+  }
+
+  // where the frame sits on the canvas, in canvas pixels
+  function geom() {
+    const s = Math.max(canvas.width / FW, canvas.height / FH) * (tiltOn() ? ZOOM : 1);
+    const w = FW * s, h = FH * s;
+    return { x: (canvas.width - w) / 2 - tilt.x * TILT * canvas.width, y: (canvas.height - h) / 2 - tilt.y * TILT * canvas.height, w, h };
+  }
+
+  function draw(img, alpha, g) {
+    ctx.globalAlpha = alpha;
+    ctx.drawImage(img, g.x, g.y, g.w, g.h);
+  }
+
+  const caps = [...document.querySelectorAll('.cap')].map(el => {
+    const d = el.dataset;
+    if (d.key) {
+      const k = meta.keys[+d.key] / (meta.count - 1);
+      return { el, from: k - +d.before, to: k + +d.after, on: false };
+    }
+    return { el, from: +d.from, to: +d.to, on: false };
+  });
+
+  // ---- hotspots ----
+  const card = document.getElementById('card');
+  const spots = meta.hotspots.map((h, k) => {
+    const el = document.createElement('button');
+    el.type = 'button';
+    el.className = 'spot';
+    el.setAttribute('aria-label', h.title);
+    el.addEventListener('click', () => open(k));
+    document.getElementById('spots').appendChild(el);
+    return { ...h, el, on: false };
+  });
+  let openK = -1;
+  function open(k) {
+    openK = k;
+    const h = spots[k];
+    document.getElementById('card-n').textContent = String(k + 1).padStart(2, '0') + ' · Look closer';
+    document.getElementById('card-t').textContent = h.title;
+    document.getElementById('card-p').textContent = h.text;
+    card.classList.add('on');
+    caps.forEach(c => c.el.style.visibility = 'hidden');
+  }
+  function close() {
+    openK = -1;
+    card.classList.remove('on');
+    caps.forEach(c => c.el.style.visibility = '');
+  }
+  card.querySelector('button').addEventListener('click', close);
+  addEventListener('keydown', e => { if (e.key === 'Escape') close(); });
+
+  function placeSpots(g, p) {
+    const dpr = canvas.width / canvas.getBoundingClientRect().width;
+    const i = Math.min(N - 1, Math.floor(cur)), j = Math.min(N - 1, i + 1), u = cur - i;
+    for (const s of spots) {
+      const a = s.uv[i * STEP], b = s.uv[j * STEP];
+      const on = !!(a && b) && p >= s.from && p <= s.to;
+      if (on !== s.on) {
+        s.el.classList.toggle('on', s.on = on);
+        if (!on && openK === spots.indexOf(s)) close();
+      }
+      if (!on) continue;
+      const x = (g.x + (a[0] + (b[0] - a[0]) * u) * g.w) / dpr, y = (g.y + (a[1] + (b[1] - a[1]) * u) * g.h) / dpr;
+      s.el.style.transform = `translate(${x.toFixed(1)}px, ${y.toFixed(1)}px)`;
+    }
+  }
+
+  const bar = document.getElementById('bar'), halo = document.getElementById('halo');
+  // repaint only when the frame pair, the blend, the tilt or the canvas changed
+  function render(force) {
+    const i = Math.min(N - 1, Math.floor(cur)), u0 = cur - i;
+    const u = u0 + (Math.round(u0) - u0) * sharp;     // at rest fade to the nearest whole frame instead of moving to it
+    const a = nearest(i), b = nearest(Math.min(N - 1, i + 1));
+    const w = b && b !== a && u > 0.004 ? u : 0;
+    const moved = tilt.x !== shown.tx || tilt.y !== shown.ty;
+    const g = geom();
+    const sharpImg = hiA > 0 && hi.get(i + Math.round(u0));
+    if (a && (force || moved || a !== shown.a || w !== shown.w || (w && b !== shown.b) || hiA !== shown.h)) {
+      if (g.w > canvas.width || g.h > canvas.height) ctx.clearRect(0, 0, canvas.width, canvas.height);
+      draw(a, 1, g);
+      if (w) draw(b, w, g);
+      if (sharpImg) draw(sharpImg, hiA, g);
+      ctx.globalAlpha = 1;
+      shown = { a, b, w, tx: tilt.x, ty: tilt.y, h: hiA };
+    }
+    const p = cur / (N - 1);
+    placeSpots(g, p);
+    if (cur === at.cur && !force) return;
+    at.cur = cur;
+    bar.style.transform = `scaleX(${p.toFixed(4)})`;
+    for (const c of caps) {
+      const on = p >= c.from && p < c.to;
+      if (on !== c.on) c.el.classList.toggle('on', c.on = on);
+    }
+    halo.classList.toggle('on', caps[0].on);
+  }
+
+  // ---- scroll -> frame, time-based smoothing (same feel at 60 and 120 Hz) ----
+  // a slow glide (about 0.35 s per wheel notch) so consecutive notches join into one movement
+  const IDLE = 220, GLIDE = 0.9;
+  let cur = -1, raf = 0, last = 0, lastScroll = 0, idleTimer = 0, sharp = 0;
+  function target() {
+    const max = document.documentElement.scrollHeight - innerHeight;
+    return (max > 0 ? Math.min(1, Math.max(0, scrollY / max)) : 0) * (N - 1);
+  }
+  function kick() {
+    if (!raf) raf = requestAnimationFrame(tick);
+  }
+  function ease(v, goal, k) {
+    const nv = v + (goal - v) * k;
+    return Math.abs(goal - nv) < 0.002 ? goal : nv;
+  }
+  function tick(now) {
+    raf = 0;
+    const t = target();
+    const dt = last ? Math.min(now - last, 100) : 16.7;
+    if (cur < 0 || reduce.matches) cur = t;
+    else {
+      cur += (t - cur) * (1 - Math.pow(GLIDE, dt / 16.7));
+      if (Math.abs(t - cur) < 0.01) cur = t;  // a 1% blend step is invisible: stop repainting
+    }
+    if (vc) {                                  // the pair on screen plus two ahead in the direction of travel
+      const i = Math.min(N - 1, Math.floor(cur)), d = t >= cur ? 1 : -1;
+      for (const k of [i, i + 1, i + 2 * d, i + 3 * d]) want(k);
+      keepOnly(i - 3, i + 4);
+    }
+    const goal = tiltOn() ? aim : { x: 0, y: 0 }, kt = 1 - Math.pow(0.9, dt / 16.7);
+    tilt = { x: ease(tilt.x, goal.x, kt), y: ease(tilt.y, goal.y, kt) };
+    const rest = cur === t && performance.now() - lastScroll > IDLE ? 1 : 0;
+    sharp = ease(sharp, rest, 1 - Math.pow(0.75, dt / 16.7));
+    const k = Math.min(N - 1, Math.round(cur)), still = rest && sharp === 1;
+    if (performance.now() - lastScroll > IDLE) wantSharp(Math.min(N - 1, Math.round(t)));   // fetch while the glide lands
+    const hiGoal = still && hiWant === k && hi.has(k) ? 1 : 0;
+    hiA = hiGoal ? ease(hiA, 1, 1 - Math.pow(0.8, dt / 16.7)) : 0;   // fade in at rest, drop at once when the walk moves
+    render(false);
+    if (cur !== t || tilt.x !== goal.x || tilt.y !== goal.y || sharp !== rest || hiA !== hiGoal) {
+      last = now;
+      kick();
+    } else last = 0;
+  }
+
+  addEventListener('scroll', () => {
+    lastScroll = performance.now();
+    clearTimeout(idleTimer);
+    idleTimer = setTimeout(kick, IDLE + 20);
+    kick();
+  }, { passive: true });
+  addEventListener('pointermove', e => {
+    if (e.pointerType !== 'mouse') return;
+    aim = { x: e.clientX / innerWidth * 2 - 1, y: e.clientY / innerHeight * 2 - 1 };
+    kick();
+  }, { passive: true });
+  document.addEventListener('pointerleave', () => { aim = { x: 0, y: 0 }; kick(); });
+  new ResizeObserver(fit).observe(canvas);
+  addEventListener('resize', fit);
+  if (reduce.addEventListener) reduce.addEventListener('change', () => fit());
+  fit();
+})();
+</script>
+</body>
+</html>

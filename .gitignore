@@ -1,0 +1,9 @@
+*.blend
+*.blend1
+*.mp4
+*.exr
+frames/
+renders/
+node_modules/
+.vercel/
+.env
