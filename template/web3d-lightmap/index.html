@@ -1,0 +1,186 @@
+<!doctype html>
+<html lang="vi">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>HẺM Streetwear</title>
+<meta name="description" content="Cuộn để bước vào HẺM, tiệm streetwear trong một con hẻm Sài Gòn, dựng 3D và chiếu sáng bằng Cycles.">
+<link rel="icon" href="data:,">
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+<link href="https://fonts.googleapis.com/css2?family=Be+Vietnam+Pro:wght@300;400;600;800&display=swap" rel="stylesheet">
+<style>
+  :root {
+    --ink: #f3f4f1;
+    --dim: rgba(243, 244, 241, .74);
+    --gold: #c8ff2e;
+    --shade: rgba(8, 9, 10, .5);
+    --bg: #0b0c0d;
+  }
+  * { box-sizing: border-box; }
+  html { scrollbar-width: none; }
+  html::-webkit-scrollbar { display: none; }
+  body { margin: 0; background: var(--bg); color: var(--ink); font: 300 15px/1.55 'Be Vietnam Pro', system-ui, sans-serif; }
+  #track { height: 1600vh; }
+  /* lvh: the canvas keeps its size when a mobile URL bar shows or hides, so it is never reallocated mid-scroll */
+  #view { position: fixed; top: 0; left: 0; width: 100%; height: 100vh; height: 100lvh; display: block; }
+  #film { position: fixed; inset: 0; pointer-events: none; background: radial-gradient(ellipse at center, transparent 55%, rgba(0, 0, 0, .38) 100%); }
+  #grain { position: fixed; inset: -50%; pointer-events: none; background: url(grain.png); opacity: .07; mix-blend-mode: overlay; animation: grain 1s steps(6) infinite; }
+  @keyframes grain { 0% { transform: translate(0, 0) } 20% { transform: translate(-7%, 4%) } 40% { transform: translate(5%, -6%) }
+    60% { transform: translate(-3%, 8%) } 80% { transform: translate(8%, 2%) } 100% { transform: translate(0, 0) } }
+  /* scrims keep white type readable over the bright bar top */
+  #scrim { position: fixed; inset: 0; pointer-events: none;
+    background: linear-gradient(to top, rgba(8, 9, 10, .62), transparent 40%), linear-gradient(to bottom, rgba(8, 9, 10, .42), transparent 20%); }
+  #halo { position: fixed; inset: 0; pointer-events: none; opacity: 0; transition: opacity .8s ease;
+    background: radial-gradient(ellipse 50% 42% at 50% 50%, rgba(8, 9, 10, .6), transparent 100%); }
+  #halo.on { opacity: 1; }
+
+  header { position: fixed; top: 22px; left: 28px; right: 28px; display: flex; justify-content: space-between; align-items: baseline; pointer-events: none; text-shadow: 0 1px 12px var(--shade); }
+  .brand { font: 800 24px/1 'Be Vietnam Pro', sans-serif; letter-spacing: .12em; color: var(--gold); }
+  .meta { font-size: 11px; letter-spacing: .2em; text-transform: uppercase; color: var(--dim); }
+
+  /* fade out quicker than in, and fade in a beat later, so two captions never sit on top of each other */
+  .cap { position: fixed; left: 28px; bottom: 56px; max-width: 420px; opacity: 0; transform: translateY(14px); transition: opacity .35s ease, transform .35s ease; pointer-events: none; text-shadow: 0 1px 16px var(--shade); }
+  .cap.on { opacity: 1; transform: none; transition: opacity .7s ease .18s, transform .7s ease .18s; }
+  .cap .n { font-size: 11px; letter-spacing: .22em; color: var(--gold); text-transform: uppercase; }
+  .cap h2 { margin: 6px 0 8px; font: 800 clamp(28px, 3.6vw, 46px)/1.08 'Be Vietnam Pro', sans-serif; letter-spacing: -.01em; text-wrap: balance; }
+  .cap p { margin: 0; color: var(--dim); text-wrap: pretty; }
+  .cap.intro { left: 50%; right: auto; bottom: auto; top: 50%; transform: translate(-50%, calc(-50% + 14px)); text-align: center; width: max-content; max-width: min(760px, calc(100vw - 32px)); }
+  .cap.intro p { max-width: 30em; margin: 0 auto; }
+  .cap.intro.on { transform: translate(-50%, -50%); }
+  .cap.intro h2 { font-size: clamp(64px, 11vw, 150px); letter-spacing: .04em; line-height: 1.3; margin-top: 4px; color: var(--gold); text-shadow: 0 0 28px rgba(200, 255, 46, .45); }
+  @media (min-width: 641px) { .cap.intro h2 { white-space: nowrap; } }
+  .hint { margin-top: 20px; font-size: 11px; letter-spacing: .24em; text-transform: uppercase; color: var(--dim); }
+  .hint::after { content: ""; display: block; width: 1px; height: 38px; margin: 12px auto 0; background: linear-gradient(var(--gold), transparent); animation: drip 1.8s ease-in-out infinite; transform-origin: top; }
+  @keyframes drip { 0% { transform: scaleY(0) } 60% { transform: scaleY(1) } 100% { transform: scaleY(1); opacity: 0 } }
+
+  /* hotspots: positioned every frame from the 3D anchor projected into the render */
+  .spot { position: fixed; left: 0; top: 0; width: 44px; height: 44px; margin: -22px 0 0 -22px; border: 0; padding: 0; background: none; cursor: pointer;
+    opacity: 0; pointer-events: none; transition: opacity .4s ease; will-change: transform; }
+  .spot.on { opacity: 1; pointer-events: auto; }
+  .spot::before { content: ""; position: absolute; inset: 13px; border-radius: 50%; background: var(--gold); box-shadow: 0 0 18px 4px rgba(200, 255, 46, .5); }
+  .spot::after { content: ""; position: absolute; inset: 6px; border-radius: 50%; border: 1px solid rgba(244, 239, 230, .85); animation: ring 2.2s ease-out infinite; }
+  .spot:hover::before, .spot:focus-visible::before { background: var(--ink); }
+  .spot:focus-visible { outline: 1px solid var(--ink); outline-offset: 4px; border-radius: 50%; }
+  @keyframes ring { 0% { transform: scale(.6); opacity: 1 } 100% { transform: scale(1.5); opacity: 0 } }
+
+  #card { position: fixed; right: 28px; bottom: 56px; width: min(340px, calc(100vw - 32px)); padding: 22px 24px 24px; background: rgba(11, 12, 13, .8);
+    backdrop-filter: blur(10px); -webkit-backdrop-filter: blur(10px); border: 1px solid rgba(244, 239, 230, .16); opacity: 0; transform: translateY(12px);
+    transition: opacity .35s ease, transform .35s ease; pointer-events: none; }
+  #card.on { opacity: 1; transform: none; pointer-events: auto; }
+  #card .n { font-size: 11px; letter-spacing: .22em; color: var(--gold); text-transform: uppercase; }
+  #card h3 { margin: 6px 0 8px; font: 800 24px/1.15 'Be Vietnam Pro', sans-serif; }
+  #card p { margin: 0; color: var(--dim); }
+  #card button { position: absolute; top: 10px; right: 10px; width: 32px; height: 32px; border: 0; background: none; color: var(--dim); font: 300 22px/1 'Be Vietnam Pro', sans-serif; cursor: pointer; }
+  #card button:hover { color: var(--ink); }
+
+  #bar { position: fixed; left: 0; bottom: 0; height: 2px; width: 100%; transform-origin: left; transform: scaleX(0); background: var(--gold); opacity: .8; }
+
+  #load { position: fixed; inset: 0; display: grid; place-items: center; background: var(--bg); transition: opacity .8s ease; z-index: 5; }
+  #load.done { opacity: 0; pointer-events: none; }
+  #load .t { font: 800 26px 'Be Vietnam Pro', sans-serif; letter-spacing: .14em; color: var(--gold); text-align: center; }
+  #load .p { margin-top: 10px; font-size: 11px; letter-spacing: .24em; color: var(--dim); text-align: center; }
+
+  @media (max-width: 640px) {
+    header { left: 16px; right: 16px; top: 16px; }
+    .meta { display: none; }
+    .cap { left: 16px; right: 16px; bottom: 40px; max-width: none; }
+    #card { right: 16px; left: 16px; width: auto; bottom: 40px; }
+  }
+  /* phone held sideways: short screen, keep the type compact */
+  @media (max-height: 500px) {
+    header { top: 14px; }
+    .cap { bottom: 26px; max-width: 440px; }
+    .cap h2 { font-size: 30px; margin: 4px 0 6px; }
+    .cap p { font-size: 14px; }
+    .cap.intro h2 { font-size: 64px; }
+    #card { bottom: 20px; }
+  }
+  @media (prefers-reduced-motion: reduce) {
+    .cap, .cap.on { transform: none; transition: opacity .3s ease; }
+    .cap.intro, .cap.intro.on { transform: translate(-50%, -50%); }
+    #grain, .spot::after, .hint::after { animation: none; }
+  }
+</style>
+</head>
+<body>
+<canvas id="view"></canvas>
+<div id="grain"></div>
+<div id="film"></div>
+<div id="scrim"></div>
+<div id="halo"></div>
+<div id="track"></div>
+
+<header>
+  <div class="brand">HẺM</div>
+  <div class="meta">Streetwear · Hẻm 42, Quận 3</div>
+</header>
+
+<!-- data-key="k": around camera key k of walk.json (blender/build_hem.py WALK), from data-before ahead of it to data-after past it -->
+<div class="cap intro" data-from="0" data-to="0.035">
+  <div class="n">Sài Gòn · từ 2026</div>
+  <h2>HẺM</h2>
+  <p>Một tiệm streetwear nằm sâu trong hẻm. Đi chậm, nhìn quanh.</p>
+  <div class="hint">Cuộn để bước vào</div>
+</div>
+<div class="cap" data-key="2" data-before="0.04" data-after="0.04">
+  <div class="n">01 · Bước vào</div>
+  <h2>Bê tông, đèn ray, một chữ neon</h2>
+  <p>Cuộn chậm để đưa mắt nhìn quanh tiệm.</p>
+</div>
+<div class="cap" data-key="4" data-before="0.04" data-after="0.04">
+  <div class="n">02 · Kệ hoodie</div>
+  <h2>21 mẫu dọc tường trái</h2>
+  <p>Cotton 400gsm, wash tay. Chạm chấm sáng để xem giá.</p>
+</div>
+<div class="cap" data-key="5" data-before="0.03" data-after="0.04">
+  <div class="n">03 · Góc skate</div>
+  <h2>8 tấm ván, in tranh hẻm</h2>
+  <p>Ngồi băng ghế thử giày, nghe đĩa cũ.</p>
+</div>
+<div class="cap" data-key="6" data-before="0.03" data-after="0.04">
+  <div class="n">04 · Bức tường</div>
+  <h2>Graffiti vẽ tay của chính con hẻm</h2>
+  <p>Xe máy, gánh hàng, mèo nằm đầu ngõ.</p>
+</div>
+<div class="cap" data-key="7" data-before="0.03" data-after="0.04">
+  <div class="n">05 · Tường giày</div>
+  <h2>30 ô, đèn LED từng tầng</h2>
+  <p>Size 39 đến 44, thử tại chỗ.</p>
+</div>
+<div class="cap" data-key="8" data-before="0.03" data-after="0.04">
+  <div class="n">06 · Phòng thử</div>
+  <h2>Rèm nhung, gương toàn thân</h2>
+  <p>Hai phòng, không cần xếp hàng.</p>
+</div>
+<div class="cap" data-key="9" data-before="0.03" data-after="0.04">
+  <div class="n">07 · Hàng mới</div>
+  <h2>Về mỗi thứ Sáu</h2>
+  <p>Hoodie sage, xanh chanh, kem.</p>
+</div>
+<div class="cap" data-key="10" data-before="0.03" data-after="0.04">
+  <div class="n">08 · Quầy</div>
+  <h2>Thẻ, QR, tiền mặt</h2>
+  <p>Hộp giày xếp sẵn sau quầy.</p>
+</div>
+<div class="cap" data-from="0.93" data-to="1.01">
+  <div class="n">Hẹn ở hẻm</div>
+  <h2>Hẻm 42, Quận 3, Sài Gòn</h2>
+  <p>Mở cửa 9h đến 22h, mỗi ngày.</p>
+</div>
+
+<div id="spots"></div>
+<div id="card" role="dialog" aria-modal="false" aria-labelledby="card-t">
+  <button type="button" aria-label="Đóng">×</button>
+  <div class="n" id="card-n"></div>
+  <h3 id="card-t"></h3>
+  <p id="card-p"></p>
+</div>
+<div id="bar"></div>
+
+<div id="load"><div><div class="t">HẺM</div><div class="p" id="pct">0%</div></div></div>
+
+<script type="importmap">{ "imports": { "three": "./vendor/three/build/three.module.js" } }</script>
+<script type="module" src="main.js"></script>
+</body>
+</html>

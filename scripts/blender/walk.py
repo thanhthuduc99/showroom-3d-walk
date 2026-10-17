@@ -82,6 +82,7 @@ def write_frames_json(scene, cam, key_frames, hotspots, out_path, version):
                 ok = not hit or (loc - at).length < 0.06
             uv.append([round(co.x, 4), round(1 - co.y, 4)] if ok else None)
         h['uv'] = uv
+        h['at'] = [round(c, 4) for c in at]          # Blender coordinates, used by bake.py for the real-time page
         out.append(h)
     scene.frame_set(0)
     meta = {"count": n, "width": scene.render.resolution_x, "height": scene.render.resolution_y, "v": version,

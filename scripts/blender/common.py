@@ -1,6 +1,6 @@
 """Shared helpers for build_scene.py: collections, materials, mesh builders, Poly Haven append.
 Project layout: <project>/blender/*.py, <project>/assets/{ph,tex,hdri,ai}/ (see tools/fetch_ph.py)."""
-import bpy, bmesh, math, os
+import bpy, bmesh, json, math, os
 from mathutils import Vector
 
 ROOT = os.path.normpath(os.path.join(os.path.dirname(os.path.abspath(__file__)), '..'))
@@ -93,6 +93,7 @@ def pbr(name, tex, scale=1.0, tint=None, rough=None, bump=0.4, coord='UV', grey=
     L(rc, b.inputs['Roughness'])
     nm = nt.nodes.new('ShaderNodeNormalMap'); nm.inputs['Strength'].default_value = bump
     L(tex_node('nor_gl', True).outputs['Color'], nm.inputs['Color']); L(nm.outputs['Normal'], b.inputs['Normal'])
+    m['pbr'] = json.dumps({'tex': tex, 'scale': scale, 'tint': tint, 'grey': grey, 'var': var})   # bake_lightmap.py rebuilds the albedo tile
     return m
 
 

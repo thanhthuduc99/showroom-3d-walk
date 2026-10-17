@@ -1,10 +1,15 @@
 # reverse-3d-room
 
-Skill cho Claude Code: mổ một web 3D đẹp bằng REA để biết vì sao nó nhìn thật, rồi dựng lại 1 phòng 3D chân thật bằng đồ miễn phí. Blender Cycles render sẵn từng khung theo đường camera, web cuộn là đi bộ trong phòng, bấm hotspot xem món đồ, deploy Vercel.
+Skill cho Claude Code: mổ một web 3D đẹp bằng REA để biết vì sao nó nhìn thật, rồi dựng lại 1 phòng 3D chân thật bằng đồ miễn phí. Blender Cycles bake ánh sáng vào texture, web WebGL vẽ lại phòng mỗi khung đúng độ phân giải màn hình (đúng cách Finely làm), cuộn là đi bộ trong phòng, bấm hotspot xem món đồ, deploy Vercel.
 
 ![Hollow Oak Lounge: nắng chiều qua cửa sổ chiếu lên thùng gỗ có đôi giày trắng và chai whiskey](docs/media/showcase.jpg)
 
-**Demo:** https://hollow-oak-lounge.vercel.app. Lounge whiskey hư cấu, 287 khung Cycles 1600x900, 3 hotspot. Làm lại theo công thức rút từ [finely-crafted.com](https://www.finely-crafted.com).
+**Demo:**
+- https://hollow-oak-lounge-3d.vercel.app: lounge whiskey hư cấu, bản realtime (mặc định).
+- https://hem-3d.vercel.app: tiệm streetwear HẺM 14x10 m, biến thể phòng lớn (lightmap + texture lặp).
+- https://hollow-oak-lounge.vercel.app: bản cũ render sẵn 287 khung Cycles 1600x900 (hướng phụ).
+
+Cả 3 là thương hiệu hư cấu. Làm lại theo công thức rút từ [finely-crafted.com](https://www.finely-crafted.com).
 
 **Công cụ mổ web:** [REA (Reverse Engineer Anything)](https://github.com/morluto/rea), package npm `rea-agents`.
 
@@ -17,6 +22,45 @@ Bên trái là bản làm theo kiểu đưa link cho AI tự đoán (https://hem
 Web mẫu đã mổ (ảnh chụp chỉ để tham khảo):
 
 ![Finely Crafted](docs/media/finely-reference.jpg)
+
+## Ví dụ 2: HẺM, phòng lớn
+
+Tiệm streetwear trong hẻm Sài Gòn, 14x10 m, trần 4,2 m. Camera đi 1 vòng chậm qua 13 điểm như người bước vào tiệm: đứng ngoài hẻm, qua cửa, kệ hoodie, góc skate, mural có chữ neon, tường giày, phòng thử, kệ hàng mới, quầy, rồi về bàn giữa.
+
+<p>
+  <img src="docs/media/hem-walk.gif" width="400" alt="Cuộn trang HẺM: camera đi dọc kệ hoodie tới góc skate">
+</p>
+
+![Màn mở đầu HẺM: nhìn từ hẻm vào tiệm, chữ HẺM neon xanh chanh](docs/media/hem-intro.jpg)
+
+<p>
+  <img src="docs/media/hem-hoodie.jpg" width="400" alt="Kệ hoodie và mural, caption Bê tông, đèn ray, một chữ neon">
+  <img src="docs/media/hem-sneakers.jpg" width="400" alt="Tường giày 30 ô có đèn LED từng tầng">
+</p>
+<p>
+  <img src="docs/media/hem-mural.jpg" width="400" alt="Mural graffiti xe máy chở hàng trong hẻm, chữ neon HẺM phía trên">
+  <img src="docs/media/hem-newin.jpg" width="400" alt="Gương phòng thử soi lại buồng, kệ hàng mới bên cạnh">
+</p>
+
+Phòng lớn thì không bake màu vào texture như lounge được (1 atlas 4096 cho cả tiệm, tường bê tông sẽ nhoè). Cách làm:
+
+| Thứ | Cách vẽ |
+|---|---|
+| Tường, sàn, trần | Texture lặp nét x lightmap chỉ chứa ánh sáng (UV thứ 2) |
+| Quần áo, giày, ma-nơ-canh (model AI) | Texture gốc x ánh sáng bake theo từng đỉnh |
+| Đồ scan nhỏ | Bake full màu như lounge |
+| Neon, LED, gương, cây | Vẽ sống |
+
+Số đo thật (laptop RTX 4050, nhưng Chrome vẽ bằng card Intel UHD, màn 1920x1080):
+
+| | |
+|---|---|
+| Bake ánh sáng | 20 phút, 256 mẫu |
+| Cuộn | trung vị 16,7 ms/khung (60 khung/giây), khoảng 1 đến 3% khung chậm hơn 25 ms |
+| Dung lượng tải | khoảng 21 MB |
+| Tiền AI cho bản này | 0 USD. Dùng lại 6 model 3D Hunyuan (khoảng 3,15 USD) từ bản cũ |
+
+Bẫy đáng nhớ nhất: không khử răng cưa khi cuộn thì vạch đèn LED, thanh treo, mép áo nhấp nháy. Bật MSAA mọi khung thì card Intel không gánh thêm được phản chiếu sàn vẽ lại mỗi khung, nên sàn và gương đổi sang ảnh cube chụp phòng 1 lần lúc tải, chiếu theo khối hộp của phòng. Chi tiết ở [references/pitfalls.md](references/pitfalls.md).
 
 ## Công thức rút ra từ Finely Crafted
 
@@ -39,8 +83,8 @@ Chi tiết từng phát hiện kèm bằng chứng: [references/finely-recipe.md
 | 4-5 | Tải đồ Poly Haven CC0, món chính bằng AI 3D nếu cần (tuỳ chọn, tốn phí) | **Bạn duyệt món chính** |
 | 6 | Dựng cảnh Blender bằng script | Claude |
 | 7 | Đánh đèn Cycles, seed test, 3 ảnh render thật cạnh web mẫu, kéo thử 24 khung | **Bạn duyệt** |
-| 8 | Render cả loạt (chạy tiếp được khi bị ngắt) | Máy chạy |
-| 9 | Đóng gói WebP + H.264, đo giật và nhảy sáng, chạy web local | **Bạn kéo thử** |
+| 8 | Bake ánh sáng (phòng nhỏ: bake màu; phòng lớn: lightmap + ánh sáng theo đỉnh). Máy chạy 15 đến 20 phút | Máy chạy |
+| 9 | Web WebGL realtime, đo khung/giây trên đúng card và cỡ màn của bạn, chạy web local | **Bạn kéo thử** |
 | 10 | Deploy Vercel | Claude |
 
 <p>
@@ -95,11 +139,17 @@ references/
 scripts/
   re/                        shaders.js (tách GLSL từ bundle), scene.js (đọc cảnh nhúng JSON)
   blender/                   build_scene.py (cảnh mẫu Hollow Oak), walk.py (đường camera + hotspot),
-                             common.py, render_setup.py, clean_ai_model.py, inspect_ph.py, cycles_gpu.py
+                             bake.py (phòng nhỏ: bake màu), bake_lightmap.py (phòng lớn: lightmap + ánh sáng theo đỉnh),
+                             build_shop_example.py (cảnh mẫu HẺM), common.py, render_setup.py, clean_ai_model.py,
+                             inspect_ph.py, cycles_gpu.py
   tools/                     fetch_ph.py, concept.py, fal3d.py, make_label.py, pack_frames.py, pack_h264.py,
-                             flicker_scan.py, contact_sheet.py, serve.py, shoot_site.py, scroll_feel.py, capture_scroll.py
-  render.cmd, xem-website.cmd
-template/                    index.html (player cuộn: WebCodecs trên máy tính, WebP trên điện thoại), vercel.json
+                             flicker_scan.py, contact_sheet.py, serve.py, shoot_site.py, scroll_feel.py, capture_scroll.py,
+                             perf3d.py (đo khung/giây khi cuộn), shoot3d.py, gpu3d.py (Chrome đang dùng card nào), make_sign.py
+  bake.cmd, bake_lightmap.cmd, render.cmd, xem-website.cmd
+template/
+  web3d/                     web realtime phòng nhỏ (three.js, vendor kèm sẵn)
+  web3d-lightmap/            web realtime phòng lớn, MSAA mọi khung (dùng vendor của web3d)
+  index.html                 hướng phụ: player khung render sẵn (WebCodecs trên máy tính, WebP trên điện thoại)
 ```
 
 ## Ghi chú

@@ -1,17 +1,18 @@
 ---
 name: reverse-3d-room
-description: Mổ một web 3D đẹp (kiểu finely-crafted.com) bằng REA để rút ra vì sao nó nhìn thật, rồi dựng lại 1 phòng 3D chân thật bằng đồ miễn phí - Blender Cycles render sẵn từng khung theo đường camera, web cuộn là đi bộ trong phòng, hotspot bấm xem món đồ, deploy Vercel. Có báo cáo 3 ngăn (quan sát / suy luận / chưa rõ), duyệt concept trước khi dựng, script Blender dựng cảnh + đường camera, đóng gói khung WebP + H.264 (WebCodecs), script đo giật và nhảy sáng. Dùng khi user nói "reverse web 3D", "REA reverse", "mổ web 3D này", "làm web 3D giống finely crafted", "phòng 3D nhìn thật", "web 3D nhìn giả quá", "website cuộn là đi bộ trong phòng", hoặc gửi link 1 web 3D muốn làm bản riêng nhìn thật như vậy.
+description: Mổ một web 3D đẹp (kiểu finely-crafted.com) bằng REA để rút ra vì sao nó nhìn thật, rồi dựng lại 1 phòng 3D chân thật bằng đồ miễn phí theo đúng cách Finely - Blender dựng cảnh, Cycles bake ánh sáng vào texture, web WebGL (three.js) vẽ lại phòng mỗi khung đúng độ phân giải màn hình, cuộn là đi bộ, sàn phản chiếu mờ, hotspot bấm xem món đồ, deploy Vercel. Có báo cáo 3 ngăn (quan sát / suy luận / chưa rõ), duyệt concept trước khi dựng, script bake + web template, script đo giật và độ nét. Hướng phụ: render sẵn từng khung (ảnh đẹp hơn, nhưng mờ trên màn lớn và giật hơn). Dùng khi user nói "reverse web 3D", "REA reverse", "mổ web 3D này", "làm web 3D giống finely crafted", "phòng 3D nhìn thật", "web 3D nhìn giả quá", "website cuộn là đi bộ trong phòng", hoặc gửi link 1 web 3D muốn làm bản riêng nhìn thật như vậy.
 ---
 
 # Reverse 3D Room
 
-Ví dụ đã làm: Hollow Oak Lounge, https://hollow-oak-lounge.vercel.app (287 khung Cycles 1600x900, 3 hotspot). Làm lại theo công thức rút từ https://www.finely-crafted.com. Bản làm trước đó theo kiểu đưa link cho AI tự đoán (https://hem-showroom.vercel.app) bị giật và nhìn giả, lý do ghi ở `references/pitfalls.md`.
+Ví dụ đã làm: Hollow Oak Lounge. **Bản chuẩn (style Thành chốt 17/10/2026): https://hollow-oak-lounge-3d.vercel.app**, realtime WebGL + ánh sáng bake. Phòng lớn (tiệm streetwear HẺM 14x10 m, biến thể lightmap): **https://hem-3d.vercel.app**. Bản render sẵn 287 khung (hướng phụ A): https://hollow-oak-lounge.vercel.app. Công thức rút từ https://www.finely-crafted.com. Bản làm trước đó theo kiểu đưa link cho AI tự đoán (https://hem-showroom.vercel.app) bị giật và nhìn giả, lý do ghi ở `references/pitfalls.md`.
 
 `SKILL` dưới đây là thư mục chứa file này. Scripts copy vào project rồi chạy từ thư mục project.
 
 ## Nguyên tắc
 
-- **Duyệt trước, dựng sau.** 4 cổng: concept, món chính, 3 ảnh render thật, kéo thử 24 khung. Chưa qua cổng thì không làm bước sau.
+- **Mặc định làm hướng B (bake + WebGL), giống Finely.** Thành đã so 2 hướng và chốt B: nét ở mọi màn hình, chuyển động thật 60 khung/giây. Hướng A (render sẵn từng khung) chỉ làm khi user yêu cầu.
+- **Duyệt trước, dựng sau.** 4 cổng: concept, món chính, 3 ảnh Cycles, bản web local. Chưa qua cổng thì không làm bước sau.
 - **Ảnh Cycles chưa thật thì web không thể thật.** Sửa ánh sáng, vật liệu ở Blender. Đừng sửa ở code web.
 - **Không dùng lại asset của web mẫu** (JS, ảnh, model, font, logo). Tải về chỉ để phân tích, để ngoài project, không commit.
 - **Thương hiệu hư cấu.** Không logo, nhãn, tên thật của hãng nào trong cảnh.
@@ -48,9 +49,9 @@ Tìm cho ra: engine gì, ánh sáng tính realtime hay bake sẵn (ảnh lightma
 
 Viết `re/<site>/bao-cao.md` theo khung trong `references/rea.md`: **quan sát được** (mỗi dòng có file làm bằng chứng), **suy luận**, **chưa rõ**, thêm bảng "vì sao bản cũ nhìn giả". Ví dụ đầy đủ: `references/finely-recipe.md`.
 
-Gửi user phần kết luận (công thức xếp theo mức quan trọng) và chọn hướng:
-- **A. Render khung sẵn** (skill này): đẹp nhất, nhanh nhất. Chỉ đi theo 1 đường, nét cố định theo cỡ render.
-- **B. Bake lightmap + WebGL** (cách Finely): nét mọi màn hình, xoay tự do. Lâu hơn, kính và sàn bóng kém Cycles. Skill này chưa có script cho B.
+Gửi user phần kết luận (công thức xếp theo mức quan trọng). Hướng làm:
+- **B. Bake + WebGL (mặc định).** Cách Finely. Nét đúng độ phân giải màn hình, chuyển động thật. Kính và đồ bóng kém Cycles một chút.
+- **A. Render khung sẵn (chỉ khi user yêu cầu).** Ảnh từng khung đẹp nhất, nhưng giãn mờ trên màn lớn hơn cỡ render, và cuộn là chuyển dần giữa các ảnh nên kém mượt. Số đo: `references/pitfalls.md`.
 
 ## Bước 3. Plan, chi phí, concept (cổng 0)
 
@@ -77,8 +78,10 @@ Ghi rõ cho user bản thật sẽ khác concept ở đâu (đồ scan có hình
 ```bash
 P=<thư mục project>; mkdir -p "$P"/{assets,frames,renders/look,renders/gate,renders/anim,renders/seedtest,refs,screenshots,web}
 cp -r $SKILL/scripts/blender $SKILL/scripts/tools "$P"/
-cp $SKILL/scripts/render.cmd $SKILL/scripts/xem-website.cmd "$P"/
-cp $SKILL/template/{index.html,vercel.json,.vercelignore,.gitignore,grain.png} "$P"/web/
+cp $SKILL/scripts/bake.cmd $SKILL/scripts/render.cmd $SKILL/scripts/xem-website.cmd "$P"/
+cp -r $SKILL/template/web3d "$P"/web3d                   # hướng B (mặc định), phòng nhỏ: bake màu vào texture
+# phòng lớn: cp -r $SKILL/template/web3d/vendor "$P"/web3d/ && cp $SKILL/template/web3d-lightmap/* $SKILL/template/web3d-lightmap/.vercelignore "$P"/web3d/ && cp $SKILL/scripts/bake_lightmap.cmd "$P"/
+cp $SKILL/template/{index.html,vercel.json,.vercelignore,.gitignore,grain.png} "$P"/web/   # hướng A; web/frames.json cũng là nơi bake.py đọc hotspot
 ```
 
 Ảnh chụp web mẫu để trong `refs/`, chỉ tham khảo, không deploy.
@@ -113,7 +116,79 @@ Sửa `blender/build_scene.py` (đang là cảnh Hollow Oak, chạy được nga
 blender -b -P blender/build_scene.py      # -> scene.blend + web/frames.json. "BUILD missing images" phải là []
 ```
 
-## Bước 7. Ánh sáng, đường camera, số khung (cổng 2 và 2b)
+## Bước 7. Ánh sáng và đường camera (cổng 2)
+
+Ảnh Cycles là trần chất lượng của bản web. Duyệt ánh sáng trên ảnh Cycles trước khi bake:
+
+```bash
+blender -b scene.blend -P blender/render_setup.py -o //renders/look/k### -f 0,<giữa>,<cuối> -- --look --exposure 1.6
+python tools/contact_sheet.py renders/look/sheet.png 2 800 renders/look/k*.png refs/fc-*.png
+```
+
+Gửi user 3 ảnh đặt cạnh ảnh web mẫu. **Dừng chờ duyệt.** Ở hướng B, `N_FRAMES` chỉ là số mẫu của đường camera, 287 là đủ.
+
+Đường camera như người bước vào tiệm: dừng ở cửa nhìn toàn cảnh, đi chậm, quay đầu chậm (pitch trong ±5 độ, mỗi lần quay không quá 60 độ giữa 2 điểm khoá), tới món chính thì chậm lại.
+
+## Bước 8B. Bake ánh sáng (hướng B)
+
+Sửa khối `EDIT` đầu `blender/bake.py`: biên phòng, object kiến trúc (`ARCH`, ghép thành 1 atlas 4096, sàn có atlas riêng), tiền tố đồ scan/AI (`PROPS`, bake qua UV riêng của chúng), tiền tố đồ vẽ trực tiếp (`LIVE`: kính, chai, đèn, lá cây có alpha).
+
+```bash
+blender -b scene.blend -P blender/bake.py -- --samples 64 --scale 0.25   # chạy thử khoảng 1 phút, kiểm lỗi
+```
+
+Rồi bấm đúp `bake.cmd` (256 mẫu, tường và sàn tự nhân 4). Hollow Oak: 15 phút trên RTX 4050 laptop. Ra `web3d/assets/`:
+- `lounge.glb`: sàn, phòng, đồ scan, mang texture bake (màu x ánh sáng, chia 2, sRGB). Draco.
+- `live.glb`: kính, chai, ly, đèn, cây.
+- `env.hdr`: ảnh 360 trong phòng để phản chiếu.
+- `walk.json`: camera từng khung, hotspot (vị trí 3D, bị che ở khung nào).
+- Tự thêm `sky.hdr`: bản 1k của HDRI dùng trong cảnh, tải từ Poly Haven, để thấy trời qua cửa sổ.
+
+### Phòng lớn: lightmap + texture lặp (`bake_lightmap.py`, `template/web3d-lightmap`)
+
+Dùng khi phòng trên khoảng 60 m2 hoặc tường, sàn có texture rõ (bê tông, gạch). Bake màu vào 1 atlas 4096 cho phòng 14x10 m thì tường nhoè. Cách làm (HẺM, ví dụ dựng cảnh: `blender/build_shop_example.py`):
+- **Kiến trúc** = texture lặp nét (UV0) x lightmap chỉ ánh sáng (UV1, bake DIFFUSE tắt color pass, lưu light/6). Web: `MeshBasicMaterial({ map, lightMap, lightMapIntensity: 6π })` (Basic nhân lightmap với 1/π). Sàn: shader riêng albedo x lightmap + phản chiếu.
+- **Hàng hoá AI** (áo, giày, ma-nơ-canh) giữ texture gốc, ánh sáng bake theo đỉnh (attribute `LIGHT`, bake target VERTEX_COLORS). Web: `MeshBasicMaterial({ map, vertexColors })` + sàn sáng tối thiểu `?gf=0.4` để đỉnh bị khuất giữa các áo không thành vệt đen.
+- **Đồ scan nhỏ** bake full màu qua UV riêng như phòng nhỏ.
+- **Vẽ sống:** neon, LED, gương, cây.
+- Đặt tên theo tiền tố, sửa danh sách `ATLAS` / `PROPS` / `GOODS` / `LIVE` đầu `bake_lightmap.py`. Bấm đúp `bake_lightmap.cmd`. HẺM: 20 phút RTX 4050, tải khoảng 21 MB.
+
+## Bước 9B. Web realtime (cổng 3)
+
+Sửa chữ trong `web3d/index.html` (chỗ `EDIT`). `web3d/main.js` thường không cần sửa:
+- Phòng: `MeshBasicMaterial` hiện texture bake. Đồ scan: texture bake đi vào emission, shader bỏ phần diffuse sống, chỉ giữ phản chiếu (kim loại, độ bóng).
+- Sàn: chụp phòng 1 lần lúc tải vào cube map 512 (`CubeCamera`), chiếu lên khối hộp của phòng (box projection), đọc mờ ở mip 3, trộn theo Fresnel. Rẻ hơn `Reflector` vẽ lại phòng mỗi khung. Gương: buồng thử có cube riêng đặt giữa buồng, gương trên tường dùng cube của phòng.
+- Đồ nhỏ gộp theo vật liệu (khoảng 200 draw call còn 25).
+- Cuộn: tốc độ chia theo lượng hình đổi trên màn (quay 1 radian tính bằng đi 2,5 m), lướt 0.9. Chuột quay đầu thật 2,2 độ.
+- Khử răng cưa: vật mảnh và sáng (vạch LED, thanh treo, mép áo) không khử răng cưa thì nhấp nháy khi cuộn. `web3d-lightmap` bật MSAA mọi khung (`?noaa` để tắt), pixel ratio tối đa 1.5. Làm được vì mọi thứ là `MeshBasicMaterial`. `web3d` (phòng nhỏ, đồ có vật liệu PBR sống) không gánh nổi MSAA trên card Intel: đang cuộn không khử, dừng 0,1 giây vẽ 1 khung FXAA, `?aa` để thử MSAA.
+- Tham số đo: `?aa` / `?noaa`, `?aniso=`, `?norefl`, `?nolive`, `?noglass`, `?pr=`, `?blur=`, `?gf=`, `?neon=`.
+
+```bash
+python tools/serve.py 8770
+python tools/gpu3d.py http://127.0.0.1:8770/web3d/index.html          # Chrome vẽ bằng card nào (laptop 2 card thường là Intel)
+python tools/perf3d.py "http://127.0.0.1:8770/web3d/index.html?a"     # p95 khoảng cách khung, số khung > 25 ms
+python tools/shoot3d.py http://127.0.0.1:8770/web3d/index.html screenshots/t1 0 0.25 0.5 0.75 1
+python tools/capture_scroll.py http://127.0.0.1:8770/web3d/index.html rt --vw=1920 --vh=1080
+```
+
+Đạt khi (đo ở cỡ màn của user, chạy 2 lần vì máy dao động): p95 khoảng 17 ms, khung > 25 ms dưới 5%, không lỗi console ngoài cảnh báo X4122/X3595 của ANGLE. **Dừng cho user kéo thử bản local.**
+
+## Bước 10B. Deploy
+
+```bash
+cd web3d && vercel deploy --prod --yes --name <tên-project>
+python ../tools/perf3d.py "https://<tên>.vercel.app/?live"
+```
+
+`.vercelignore` bỏ `assets/tex` (PNG bake gốc). Hollow Oak tải khoảng 13 MB.
+
+---
+
+# Hướng phụ A: render sẵn từng khung
+
+Chỉ làm khi user yêu cầu. Các bước dưới thay cho 8B đến 10B.
+
+## Bước 7A. Ánh sáng, đường camera, số khung (cổng 2 và 2b)
 
 ```bash
 blender -b scene.blend -P blender/render_setup.py -o //renders/look/k### -f 0,<giữa>,<cuối> -- --look --exposure 1.6
@@ -131,7 +206,7 @@ python tools/contact_sheet.py renders/look/sheet.png 2 800 renders/gate/*.png re
 - Gửi user 3 ảnh gate đặt cạnh ảnh web mẫu. **Dừng chờ duyệt (cổng 2).**
 - Render 24 khung liền nhau ở đoạn tối nhất, ráp vào web (Bước 9), cho user tự kéo thử. **Dừng chờ duyệt (cổng 2b).**
 
-## Bước 8. Render cả loạt
+## Bước 8A. Render cả loạt
 
 User bấm đúp `render.cmd` (hoặc bật tách khỏi phiên Claude). Đặt `BLENDER` nếu blender không có trên PATH, `EXPOSURE` nếu khác 1.6. Ngắt giữa chừng thì chạy lại, khung xong được bỏ qua. Ước giờ = số khung x giây/khung đo ở gate. Cắm sạc, tắt sleep.
 
@@ -139,7 +214,7 @@ Trên macOS/Linux: `blender -b scene.blend -P blender/render_setup.py -a -- --ex
 
 Muốn dày khung sau khi đã render: đổi `N_FRAMES` từ n thành 2n-1, chạy lại build, chuyển `frames/f{k}` sang `f{2k}`, bump `VERSION`, chạy `render.cmd`. Chỉ khung lẻ được render.
 
-## Bước 9. Đóng gói và web (cổng 3)
+## Bước 9A. Đóng gói và web (cổng 3)
 
 ```bash
 python tools/flicker_scan.py                     # khung nhảy sáng (đọc kết quả theo pitfalls.md)
@@ -159,7 +234,7 @@ python tools/capture_scroll.py http://127.0.0.1:8770/web/index.html local --vw=1
 
 Đạt khi: p95 khoảng cách khung khi cuộn khoảng 17 ms, 0 lần trên 50 ms, không lỗi console, hotspot nằm đúng món đồ, iPhone chạy được. Đo ở cỡ màn hình thật của user. **Dừng cho user kéo thử bản local.**
 
-## Bước 10. Deploy Vercel
+## Bước 10A. Deploy Vercel
 
 ```bash
 cd web && vercel deploy --prod --yes --name <tên-project>
@@ -172,4 +247,4 @@ curl -sI https://<tên>.vercel.app/frames-webp/<v>/960/f000.webp | grep -i cache
 
 - `references/rea.md`: lệnh REA, khung báo cáo 3 ngăn.
 - `references/finely-recipe.md`: công thức Finely, so sánh hướng A và B.
-- `references/pitfalls.md`: bẫy đã gặp, số đo, giới hạn còn lại. Đọc trước khi debug giật, mờ, nhảy sáng.
+- `references/pitfalls.md`: bẫy đã gặp, số đo, giới hạn còn lại (cả hướng A và B). Đọc trước khi debug giật, mờ, nhảy sáng, tụt khung.

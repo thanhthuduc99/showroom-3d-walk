@@ -68,3 +68,50 @@ Chi tiết bản cuối:
 - Màn 60 Hz chỉ chụp được 1 khung mỗi 16,7 ms, không dày hơn được.
 - Playwright trên Windows phải thêm `--disable-features=CalculateNativeWinOcclusion` (đã có trong script). Thiếu cờ này, cửa sổ đặt ngoài màn hình bị Chrome bóp còn 1 khung/giây và số đo sai.
 - Đo ở đúng cỡ màn hình của user, không chỉ 1440.
+
+## Hướng B: bake + WebGL (Hollow Oak 3D, 16-17/10/2026)
+
+Máy đo: cùng laptop, màn 1920x1080 scale 100%, Chrome vẽ bằng card Intel UHD. Đo bằng `perf3d.py` (khoảng cách rAF khi cuộn).
+
+| Thử | Kết quả |
+|---|---|
+| MSAA (`antialias: true`) ở 1920 | p95 50 đến 83 ms. Tắt MSAA: p95 17 ms |
+| EffectComposer (RenderPass + OutputPass + FXAA) mỗi khung | 130 trên khoảng 770 khung chậm hơn 25 ms. Chỉ chạy 1 lần khi dừng cuộn |
+| Phản chiếu sàn 1024x512 | Tốn gần bằng vẽ cả phòng lần 2. Hạ 384x192, đọc mờ mip 1.8, bỏ đồ nhỏ khỏi ảnh phản chiếu |
+| Giày AI 150k tam giác x 2 | Chiếm 300k trên khoảng 470k tam giác. Decimate 15% lúc export, texture bake vẫn giữ chi tiết |
+| 3 PointLight cho chai | Tụt khung (85 khung chậm) và chai bị bệch. Bỏ |
+| Bản cuối | p95 17 ms, 1,5 đến 5% khung chậm hơn 25 ms tuỳ lần đo. Tải khoảng 13 MB |
+
+Bẫy khác:
+- **Bake vật soi gương âm** (`scale.x = -1`) ra ruột ngược, bake đen. `bake.py` lật normal khi định thức ma trận âm.
+- **Template trong collection bị loại** vẫn nằm trong `scene.objects`. Lọc bằng `visible_get()`, nếu không bake cả bản mẫu.
+- **Metal có base color đen thì không phản chiếu gì.** Giữ base color gốc, đưa ảnh bake vào emission, bỏ diffuse sống trong shader (`onBeforeCompile`, sau `lights_fragment_end`).
+- **Cửa sổ đen:** nền phải là HDRI trời (x3), không phải ảnh 360 trong phòng.
+- **Viền sáng xanh ở chân tường** do ảnh phản chiếu mờ ăn cả nền trời. Đổi nền sang tối khi vẽ ảnh phản chiếu (`Reflector.onBeforeRender` gọi bằng `.apply(floor, args)`, không gọi trơn).
+- **Tường lấm tấm** ở 256 mẫu: tường và sàn bake 4 lần mẫu, blur 1,6 px trong atlas phòng.
+- **Reflector cần pháp tuyến +Z cục bộ:** xoay hình học sàn `rotateX(PI/2)` rồi xoay mesh `-PI/2`.
+- **Còn kém Cycles:** kính đục và phẳng, đai sắt thùng gỗ tối (chỉ phản chiếu ảnh 360 trong phòng), nhãn chai ít sáng.
+- **Viết file có dấu backtick bằng heredoc không quote** (`<<EOF`) làm bash chạy chữ trong backtick thành lệnh. Dùng `<<'EOF'` hoặc file Python riêng.
+
+## Phòng lớn: lightmap + vertex light (HẺM, 17/10/2026)
+
+Cùng laptop, Chrome vẽ bằng Intel UHD, màn 1920x1080 100%.
+
+| Thử | Kết quả |
+|---|---|
+| Không khử răng cưa khi cuộn, FXAA 1 lần khi dừng | User thấy vạch LED kệ giày, thanh treo, mép áo nhấp nháy khi cuộn, và hình nhảy lúc dừng |
+| MSAA + `Reflector` vẽ lại phòng mỗi khung | 53 đến 72 khung chậm hơn 25 ms trên khoảng 900. Mỗi thứ riêng thì vừa, cộng lại quá 16 ms. Vẽ phản chiếu trước lượt chính không đỡ |
+| MSAA + sàn cube map chụp 1 lần (box projection) | 9 đến 27 khung chậm trên khoảng 950, p95 17 ms. Bản chốt |
+| Lounge (đồ PBR sống) bật MSAA, kể cả bản gốc | 107 đến 165 khung chậm. Phòng nhỏ giữ FXAA khi dừng; sàn cube map vẫn nhẹ hơn `Reflector` (6 so với 19 khung chậm) |
+
+Bẫy khác:
+- **Bake DIFFUSE tắt color pass, vật metallic 1.0 ra đen** (Cycles chia cho màu diffuse bằng 0). Hạ metallic 0.9 lúc bake, trả lại 1 trong `live.glb`.
+- **Bản copy để bake phải copy `visible_shadow`.** Nhà đối diện tắt bóng để nắng lọt vào tiệm; copy mất cờ đó thì lightmap không có vệt nắng.
+- **Vệt đen trên áo treo sát nhau:** đỉnh bị khuất bake gần 0 (p50 khoảng 0.03), nội suy ra vệt. Web giữ sàn ánh sáng `max(vColor, 0.4)`. Chấm tối mảnh còn lại là lỗi texture AI.
+- **Gương soi env probe Cycles ra trắng xoá.** Gương phải soi đúng chỗ nó đứng: cube chụp từ giữa buồng thử, box = buồng.
+- **Gương xuất ra 1 mesh gộp** cho mọi tấm: tách theo phần nối liền (`pieces()` trong `main.js`) rồi mới tính hộp từng tấm.
+- **Cube camera đặt sát tường** ra hình vỡ khối vì nhìn cận. Đặt cách mặt gương khoảng 0,8 m.
+- **Chữ tiếng Việt to có dấu hỏi trên chữ hoa** (HẺM) đè dòng trên khi `line-height` 1.08. Dùng 1.3.
+- **Neon emission x0.35 trên web** mờ, không đọc được chữ. x0.8 thì lõi trắng, đọc rõ.
+- **`.cmd` viết bằng Python/bash mà không dùng raw string** thì `\b`, `\a` thành ký tự điều khiển: `blender\bake.py` hoá `blenderake.py`, bấm đúp không chạy. Viết bằng `r'''...'''`, rồi `cat -A` kiểm tra.
+
