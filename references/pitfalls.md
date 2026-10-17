@@ -58,7 +58,7 @@ Chi tiết bản cuối:
 
 - **Mờ trên màn 1920.** Khung 1600x900 cộng 5% phóng to của hiệu ứng nghiêng chuột, giãn 1,26 lần trên màn 1920x1080. Độ nét lúc đứng yên: cửa sổ 1920 còn 77, cửa sổ 1440 là 115. Test ở cửa sổ 1440 sẽ không thấy lỗi này. Muốn nét: render đúng cỡ màn hình đích (`RES` trong `build_scene.py`), bỏ phóng to (`ZOOM = 1` trong `index.html`).
 - **Tốc độ đi không đều.** Đoạn đi thẳng hình đổi ít, đoạn quay người mỗi nấc chuột làm hình đổi gấp 2 đến 4 lần. Khung nhảy mạnh lúc cuộn: Hollow Oak 18%, Finely 4%. Hướng sửa: tăng `TURN_COST` trong `walk.py` hoặc chia lại đường đi theo lượng hình chuyển động trên màn hình, rồi render lại.
-- **Không mượt được như Finely** vì vẫn là chuyển dần giữa các ảnh. Muốn chuyển động thật và nét ở mọi màn hình thì làm hướng B trong `finely-recipe.md` (bake + WebGL).
+- **Không mượt được như Finely** vì vẫn là chuyển dần giữa các ảnh. Muốn chuyển động thật và nét ở mọi màn hình thì làm hướng B trong `recipe.md` (bake + WebGL).
 
 ## Đo
 

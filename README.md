@@ -9,19 +9,13 @@ Skill cho Claude Code: tạo 1 showroom, cửa hàng hay phòng 3D mới trên w
 - https://hem-3d.vercel.app: tiệm streetwear HẺM 14x10 m, biến thể phòng lớn (lightmap + texture lặp).
 - https://hollow-oak-lounge.vercel.app: bản cũ render sẵn 287 khung Cycles 1600x900 (hướng phụ).
 
-Cả 3 là thương hiệu hư cấu. Làm lại theo công thức rút từ [finely-crafted.com](https://www.finely-crafted.com).
-
-**Tuỳ chọn:** có web tham khảo thì skill phân tích nó trước bằng [REA (Reverse Engineer Anything)](https://github.com/morluto/rea), package npm `rea-agents`, để biết web đó nhìn thật nhờ đâu. Không có thì dùng công thức Finely đã rút sẵn.
+Cả 3 là thương hiệu hư cấu. Bạn đưa loại tiệm, cỡ phòng, món chính; skill làm ra 1 showroom như 2 bản realtime ở trên.
 
 ## Trước và sau
 
 Bên trái là bản làm theo kiểu đưa link cho AI tự đoán (https://hem-showroom.vercel.app): tua video nên kéo bị giật, path trace trong trình duyệt nên ánh sáng nhảy. Bên phải là bản làm bằng skill này.
 
 ![So sánh HẺM và Hollow Oak](docs/media/compare.jpg)
-
-Web tham khảo đã phân tích (ảnh chụp chỉ để tham khảo):
-
-![Finely Crafted](docs/media/finely-reference.jpg)
 
 ## Ví dụ 2: HẺM, phòng lớn
 
@@ -62,47 +56,43 @@ Số đo thật (laptop RTX 4050, nhưng Chrome vẽ bằng card Intel UHD, màn
 
 Bẫy đáng nhớ nhất: không khử răng cưa khi cuộn thì vạch đèn LED, thanh treo, mép áo nhấp nháy. Bật MSAA mọi khung thì card Intel không gánh thêm được phản chiếu sàn vẽ lại mỗi khung, nên sàn và gương đổi sang ảnh cube chụp phòng 1 lần lúc tải, chiếu theo khối hộp của phòng. Chi tiết ở [references/pitfalls.md](references/pitfalls.md).
 
-## Công thức rút ra từ Finely Crafted
+## Vì sao nhìn thật
 
-1. Ánh sáng tính sẵn (Finely bake lightmap 4096x4096 bằng Bakery trong Unity), có ánh sáng dội và vệt nắng.
+1. Ánh sáng tính sẵn bằng Cycles (bake), có ánh sáng dội và vệt nắng. Trình duyệt không tính ánh sáng nên không nhảy sáng.
 2. Sàn phản chiếu mờ, độ bóng loang không đều.
-3. Camera ở tầm mắt người, 1,5 m.
-4. Hậu kỳ nhẹ: tone map filmic, bloom ở đèn, vignette, grain.
-5. Tường, sàn, nội thất phần lớn là màu phẳng. Texture chi tiết dồn cho vài món chính.
+3. Camera ở tầm mắt người, 1,5 đến 1,6 m, ống 24 mm.
+4. Đồ nội thất là đồ scan thật (Poly Haven), món chính làm bằng AI 3D. Không dựng ghế, sofa bằng code.
+5. Hậu kỳ nhẹ: tone map 1 lần, bloom ở đèn, vignette, grain. Khử răng cưa mọi khung.
 
-Chi tiết từng phát hiện kèm bằng chứng: [references/finely-recipe.md](references/finely-recipe.md).
+Chi tiết: [references/recipe.md](references/recipe.md).
 
 ## Quy trình
 
 | Bước | Việc | Ai quyết |
 |---|---|---|
 | 0 | Chốt loại tiệm, cỡ phòng, món chính, các khu trong tiệm, ngân sách giờ và tiền, cỡ màn hình đích | Bạn |
-| 1-2 | Tuỳ chọn, khi có web tham khảo: phân tích bằng REA, báo cáo 3 ngăn (quan sát được, suy luận, chưa rõ) | Claude |
-| 3 | Plan + chi phí + 2 ảnh concept (Codex image gen) | **Bạn duyệt** |
-| 4-5 | Tải đồ Poly Haven CC0, món chính bằng AI 3D nếu cần (tuỳ chọn, tốn phí) | **Bạn duyệt món chính** |
-| 6 | Dựng cảnh Blender bằng script | Claude |
-| 7 | Đánh đèn Cycles, seed test, 3 ảnh render thật cạnh web mẫu, kéo thử 24 khung | **Bạn duyệt** |
-| 8 | Bake ánh sáng (phòng nhỏ: bake màu; phòng lớn: lightmap + ánh sáng theo đỉnh). Máy chạy 15 đến 20 phút | Máy chạy |
-| 9 | Web WebGL realtime, đo khung/giây trên đúng card và cỡ màn của bạn, chạy web local | **Bạn kéo thử** |
-| 10 | Deploy Vercel | Claude |
+| 1 | Plan + chi phí + 2 ảnh concept (Codex image gen) | **Bạn duyệt** |
+| 2-3 | Tải đồ Poly Haven CC0, món chính bằng AI 3D nếu cần (tuỳ chọn, tốn phí) | **Bạn duyệt món chính** |
+| 4 | Dựng cảnh Blender bằng script | Claude |
+| 5 | Đánh đèn Cycles, seed test, 3 ảnh render thật cạnh ảnh concept | **Bạn duyệt** |
+| 6 | Bake ánh sáng (phòng nhỏ: bake màu; phòng lớn: lightmap + ánh sáng theo đỉnh). Máy chạy 15 đến 20 phút | Máy chạy |
+| 7 | Web WebGL realtime, đo khung/giây trên đúng card và cỡ màn của bạn, chạy web local | **Bạn kéo thử** |
+| 8 | Deploy Vercel | Claude |
 
 <p>
   <img src="docs/media/hollow-oak-intro.jpg" width="400" alt="Màn mở đầu Hollow Oak Lounge">
   <img src="docs/media/hollow-oak-hotspot.jpg" width="400" alt="Bấm hotspot đôi giày mở thẻ thông tin">
 </p>
 
-## Số liệu thật của bản demo
+## Số liệu thật
 
-| | |
-|---|---|
-| Thời gian bản đầu | khoảng 5,7 giờ làm, render máy tự chạy |
-| Render | trung vị 30 giây/khung ở 1600x900 trên RTX 4050 laptop |
-| Chi phí model AI | khoảng 0,87 USD (ảnh concept + 1 đôi giày 3D Hunyuan) |
-| Kéo trên máy tính | p95 17 ms/khung, 0 lần khựng trên 50 ms |
-| Nhảy sáng giữa 2 khung | dưới 0,1 mức xám trên 255 |
-| Dung lượng tải | máy tính 20,5 MB, iPhone 4,3 MB (Finely 26,7 MB) |
-
-Giới hạn còn lại (khung giãn trên màn rộng hơn cỡ render, tốc độ đi không đều ở đoạn quay người) ghi ở [references/pitfalls.md](references/pitfalls.md).
+| | Hollow Oak (7x6 m) | HẺM (14x10 m) |
+|---|---|---|
+| Bake ánh sáng (RTX 4050 laptop, 256 mẫu) | 15 phút | 20 phút |
+| Cuộn trên card Intel UHD, 1920x1080 | p95 17 ms/khung | p95 17 ms/khung, 1 đến 3% khung chậm hơn 25 ms |
+| Dung lượng tải | khoảng 13 MB | khoảng 21 MB |
+| Chi phí model AI | khoảng 0,87 USD (1 đôi giày) | khoảng 3,15 USD (6 model) |
+| Hosting | Vercel Hobby miễn phí | Vercel Hobby miễn phí |
 
 ## Cài đặt
 
@@ -125,18 +115,16 @@ Làm showroom 3D cho quán cà phê của mình, khoảng 8x6 m, món chính là
 Cuộn là đi bộ từ cửa vào tới quầy. Lên plan, chi phí và ảnh concept trước.
 ```
 
-Có web tham khảo thì dán link vào, skill sẽ phân tích nó trước. Hoặc gọi thẳng `/showroom-3d-walk`.
+Hoặc gọi thẳng `/showroom-3d-walk`.
 
 ## Cấu trúc
 
 ```
-SKILL.md                     quy trình 10 bước (bước 1-2 tuỳ chọn), 4 cổng duyệt
+SKILL.md                     quy trình 9 bước, 4 cổng duyệt
 references/
-  rea.md                     lệnh REA, khung báo cáo 3 ngăn
-  finely-recipe.md           công thức Finely, so sánh render khung sẵn và bake lightmap
+  recipe.md                  vì sao nhìn thật, vì sao bản tự làm nhìn giả, 2 hướng làm
   pitfalls.md                bẫy đã gặp, số đo, giới hạn còn lại
 scripts/
-  re/                        shaders.js (tách GLSL từ bundle), scene.js (đọc cảnh nhúng JSON)
   blender/                   build_scene.py (cảnh mẫu Hollow Oak), walk.py (đường camera + hotspot),
                              bake.py (phòng nhỏ: bake màu), bake_lightmap.py (phòng lớn: lightmap + ánh sáng theo đỉnh),
                              build_shop_example.py (cảnh mẫu HẺM), common.py, render_setup.py, clean_ai_model.py,
@@ -153,9 +141,8 @@ template/
 
 ## Ghi chú
 
-- Repo **không kèm bất kỳ asset nào của Finely Crafted** (code, ảnh, model, font, logo). Finely chỉ là web tham khảo để học cách làm. File tải về khi phân tích web tham khảo chỉ để học, không dùng lại. DISCLAIMER của REA cũng ghi rõ điều này.
 - Repo không kèm model, texture, file `.blend` hay khung render. Đồ nội thất tải từ [Poly Haven](https://polyhaven.com) (CC0) bằng `fetch_ph.py`.
-- Hollow Oak là thương hiệu hư cấu. Khi làm web cho mình, đừng dùng logo hay nhãn thật của hãng khác.
+- Hollow Oak và HẺM là thương hiệu hư cấu. Khi làm web cho mình, đừng dùng logo hay nhãn thật của hãng khác.
 - Model 3D AI (fal.ai Hunyuan) là tuỳ chọn có tốn phí, khoảng 0,57 USD/món (ảnh mẫu 0,04 + 3D có PBR 0,525) ở thời điểm 10/2026.
 
 Tác giả: Thành Vũ Đức (Contentta). License MIT.
