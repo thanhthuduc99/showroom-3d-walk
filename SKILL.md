@@ -1,11 +1,16 @@
 ---
-name: reverse-3d-room
-description: Mổ một web 3D đẹp (kiểu finely-crafted.com) bằng REA để rút ra vì sao nó nhìn thật, rồi dựng lại 1 phòng 3D chân thật bằng đồ miễn phí theo đúng cách Finely - Blender dựng cảnh, Cycles bake ánh sáng vào texture, web WebGL (three.js) vẽ lại phòng mỗi khung đúng độ phân giải màn hình, cuộn là đi bộ, sàn phản chiếu mờ, hotspot bấm xem món đồ, deploy Vercel. Có báo cáo 3 ngăn (quan sát / suy luận / chưa rõ), duyệt concept trước khi dựng, script bake + web template, script đo giật và độ nét. Hướng phụ: render sẵn từng khung (ảnh đẹp hơn, nhưng mờ trên màn lớn và giật hơn). Dùng khi user nói "reverse web 3D", "REA reverse", "mổ web 3D này", "làm web 3D giống finely crafted", "phòng 3D nhìn thật", "web 3D nhìn giả quá", "website cuộn là đi bộ trong phòng", hoặc gửi link 1 web 3D muốn làm bản riêng nhìn thật như vậy.
+name: showroom-3d-walk
+description: Tạo 1 showroom / cửa hàng / phòng 3D mới trên web nhìn như ảnh chụp, cuộn là đi bộ quanh tiệm như khách bước vào (kiểu finely-crafted.com). Blender dựng cảnh bằng script, đồ scan Poly Haven CC0 + model AI cho món chính, Cycles bake ánh sáng, web WebGL (three.js) vẽ lại phòng mỗi khung đúng độ phân giải màn hình, 60 khung/giây, sàn và gương phản chiếu, hotspot bấm xem món đồ và giá, caption theo đoạn, deploy Vercel. Có 2 cỡ - phòng nhỏ (bake màu vào texture) và phòng lớn (lightmap + texture lặp, ánh sáng theo đỉnh cho quần áo). Duyệt concept, món chính, ảnh Cycles, bản web local trước khi đi tiếp; có script đo khung/giây và chụp kiểm tra. Bước tuỳ chọn - user gửi link web mẫu thì phân tích nó bằng REA trước. Dùng khi user nói "showroom 3D", "làm showroom 3D", "cửa hàng 3D", "tiệm 3D", "phòng 3D nhìn thật", "phòng mẫu 3D", "website cuộn là đi bộ trong phòng", "web 3D giống finely crafted", "web 3D nhìn giả quá", "dựng lại showroom như Bumatech", hoặc gửi link 1 web 3D muốn làm bản riêng nhìn thật như vậy.
 ---
 
-# Reverse 3D Room
+# Showroom 3D Walk
 
-Ví dụ đã làm: Hollow Oak Lounge. **Bản chuẩn (style Thành chốt 17/10/2026): https://hollow-oak-lounge-3d.vercel.app**, realtime WebGL + ánh sáng bake. Phòng lớn (tiệm streetwear HẺM 14x10 m, biến thể lightmap): **https://hem-3d.vercel.app**. Bản render sẵn 287 khung (hướng phụ A): https://hollow-oak-lounge.vercel.app. Công thức rút từ https://www.finely-crafted.com. Bản làm trước đó theo kiểu đưa link cho AI tự đoán (https://hem-showroom.vercel.app) bị giật và nhìn giả, lý do ghi ở `references/pitfalls.md`.
+Tạo showroom 3D mới, cuộn là đi bộ quanh tiệm. Ví dụ đã làm:
+- Hollow Oak Lounge (phòng nhỏ). **Bản chuẩn, style Thành chốt 17/10/2026: https://hollow-oak-lounge-3d.vercel.app**
+- Tiệm streetwear HẺM 14x10 m (phòng lớn, biến thể lightmap): **https://hem-3d.vercel.app**
+- Bản render sẵn 287 khung (hướng phụ A): https://hollow-oak-lounge.vercel.app
+
+Công thức nhìn thật rút từ https://www.finely-crafted.com, ghi ở `references/finely-recipe.md`. Bản làm theo kiểu đưa link cho AI tự đoán (https://hem-showroom.vercel.app, path tracing trong trình duyệt) bị giật và nhìn giả, lý do ghi ở `references/pitfalls.md`.
 
 `SKILL` dưới đây là thư mục chứa file này. Scripts copy vào project rồi chạy từ thư mục project.
 
@@ -14,8 +19,9 @@ Ví dụ đã làm: Hollow Oak Lounge. **Bản chuẩn (style Thành chốt 17/1
 - **Mặc định làm hướng B (bake + WebGL), giống Finely.** Thành đã so 2 hướng và chốt B: nét ở mọi màn hình, chuyển động thật 60 khung/giây. Hướng A (render sẵn từng khung) chỉ làm khi user yêu cầu.
 - **Duyệt trước, dựng sau.** 4 cổng: concept, món chính, 3 ảnh Cycles, bản web local. Chưa qua cổng thì không làm bước sau.
 - **Ảnh Cycles chưa thật thì web không thể thật.** Sửa ánh sáng, vật liệu ở Blender. Đừng sửa ở code web.
+- **Đường đi như khách bước vào tiệm:** đứng ngoài nhìn vào, qua cửa, dừng nhìn toàn cảnh, đi 1 vòng qua từng khu, quay đầu chậm, tới món chính thì chậm lại.
 - **Không dùng lại asset của web mẫu** (JS, ảnh, model, font, logo). Tải về chỉ để phân tích, để ngoài project, không commit.
-- **Thương hiệu hư cấu.** Không logo, nhãn, tên thật của hãng nào trong cảnh.
+- **Thương hiệu hư cấu** trừ khi làm cho khách có thương hiệu thật. Không logo, nhãn, tên thật của hãng khác trong cảnh.
 - **Đồ nội thất lấy đồ scan** (Poly Haven CC0). Chỉ dựng bằng code khối kiến trúc phẳng và vật xoay tròn đơn giản (ly, chai, chao đèn). Ghế, sofa dựng bằng code lộ CG ngay.
 - **Ảnh concept tạo bằng Codex image gen** (`tools/concept.py`, gọi `codex exec` với tool `image_gen` của gói ChatGPT đang login). Không dùng API ảnh trả phí.
 - **Model 3D AI là tuỳ chọn có tốn phí** (fal.ai Hunyuan, `tools/fal3d.py`). Báo giá cho user trước khi gọi. Key đọc từ biến môi trường hoặc `.env`, không bao giờ in ra.
@@ -24,15 +30,17 @@ Ví dụ đã làm: Hollow Oak Lounge. **Bản chuẩn (style Thành chốt 17/1
 
 ## Bước 0. Chốt brief (AskUserQuestion, 1 lượt)
 
-1. Link web mẫu.
-2. Không gian và 1 đến 3 món chính (hero) cần nhìn rõ nhất.
-3. Ngân sách: số giờ làm, số tiền model AI.
-4. Màn hình người xem chủ yếu dùng (1440, 1920 hay lớn hơn). Quyết định cỡ render, xem Bước 7.
-5. Máy có card NVIDIA không, đã có Blender chưa.
+1. Loại tiệm và thương hiệu (thật của khách hay hư cấu), cỡ phòng (dài x rộng x cao).
+2. 1 đến 3 món chính (hero) cần nhìn rõ nhất, các khu trong tiệm (kệ, quầy, phòng thử...).
+3. Web tham khảo nếu có (không bắt buộc).
+4. Ngân sách: số giờ làm, số tiền model AI.
+5. Màn hình người xem chủ yếu dùng (1440, 1920 hay lớn hơn), máy có card NVIDIA không, đã có Blender chưa.
 
-## Bước 1. Mổ web mẫu bằng REA
+Phòng trên khoảng 60 m2 hoặc tường, sàn có texture rõ thì dùng biến thể phòng lớn (Bước 8B).
 
-Chi tiết lệnh: `references/rea.md`. Tóm tắt:
+## Bước 1. Phân tích web tham khảo bằng REA (tuỳ chọn)
+
+Bỏ qua bước 1 và 2 khi user không gửi link: công thức Finely đã có sẵn trong `references/finely-recipe.md`. Có link thì làm để biết web đó nhìn thật nhờ đâu. Chi tiết lệnh: `references/rea.md`. Tóm tắt:
 
 ```bash
 npx -y rea-agents@latest --version
@@ -45,7 +53,7 @@ node $SKILL/scripts/re/shaders.js <bundle tải về>.js > re/<site>/evidence/04
 
 Tìm cho ra: engine gì, ánh sáng tính realtime hay bake sẵn (ảnh lightmap lớn, UV thứ 2), sàn phản chiếu thế nào, camera cao bao nhiêu, hậu kỳ gì, tải bao nhiêu MB.
 
-## Bước 2. Báo cáo 3 ngăn
+## Bước 2. Báo cáo 3 ngăn (chỉ khi có bước 1)
 
 Viết `re/<site>/bao-cao.md` theo khung trong `references/rea.md`: **quan sát được** (mỗi dòng có file làm bằng chứng), **suy luận**, **chưa rõ**, thêm bảng "vì sao bản cũ nhìn giả". Ví dụ đầy đủ: `references/finely-recipe.md`.
 

@@ -9,7 +9,7 @@ import urllib.request
 from concurrent.futures import ThreadPoolExecutor
 from pathlib import Path
 
-H = {"User-Agent": "Mozilla/5.0 reverse-3d-room"}
+H = {"User-Agent": "Mozilla/5.0 showroom-3d-walk"}
 ROOT = Path(__file__).resolve().parents[1] / "assets"
 
 OPT = {a[2:].split("=")[0]: a.split("=", 1)[1] for a in sys.argv[1:] if a.startswith("--") and "=" in a}

@@ -1,6 +1,6 @@
-# reverse-3d-room
+# showroom-3d-walk
 
-Skill cho Claude Code: mổ một web 3D đẹp bằng REA để biết vì sao nó nhìn thật, rồi dựng lại 1 phòng 3D chân thật bằng đồ miễn phí. Blender Cycles bake ánh sáng vào texture, web WebGL vẽ lại phòng mỗi khung đúng độ phân giải màn hình (đúng cách Finely làm), cuộn là đi bộ trong phòng, bấm hotspot xem món đồ, deploy Vercel.
+Skill cho Claude Code: tạo 1 showroom, cửa hàng hay phòng 3D mới trên web, nhìn như ảnh chụp. Cuộn chuột là đi bộ quanh tiệm như khách bước vào, bấm hotspot xem món đồ và giá. Blender dựng cảnh bằng script với đồ miễn phí, Cycles bake ánh sáng, web WebGL vẽ lại phòng 60 khung/giây đúng độ phân giải màn hình (cách [finely-crafted.com](https://www.finely-crafted.com) làm), deploy Vercel.
 
 ![Hollow Oak Lounge: nắng chiều qua cửa sổ chiếu lên thùng gỗ có đôi giày trắng và chai whiskey](docs/media/showcase.jpg)
 
@@ -11,15 +11,15 @@ Skill cho Claude Code: mổ một web 3D đẹp bằng REA để biết vì sao 
 
 Cả 3 là thương hiệu hư cấu. Làm lại theo công thức rút từ [finely-crafted.com](https://www.finely-crafted.com).
 
-**Công cụ mổ web:** [REA (Reverse Engineer Anything)](https://github.com/morluto/rea), package npm `rea-agents`.
+**Tuỳ chọn:** có web tham khảo thì skill phân tích nó trước bằng [REA (Reverse Engineer Anything)](https://github.com/morluto/rea), package npm `rea-agents`, để biết web đó nhìn thật nhờ đâu. Không có thì dùng công thức Finely đã rút sẵn.
 
 ## Trước và sau
 
-Bên trái là bản làm theo kiểu đưa link cho AI tự đoán (https://hem-showroom.vercel.app): tua video nên kéo bị giật, path trace trong trình duyệt nên ánh sáng nhảy. Bên phải là bản làm theo công thức REA rút ra.
+Bên trái là bản làm theo kiểu đưa link cho AI tự đoán (https://hem-showroom.vercel.app): tua video nên kéo bị giật, path trace trong trình duyệt nên ánh sáng nhảy. Bên phải là bản làm bằng skill này.
 
 ![So sánh HẺM và Hollow Oak](docs/media/compare.jpg)
 
-Web mẫu đã mổ (ảnh chụp chỉ để tham khảo):
+Web tham khảo đã phân tích (ảnh chụp chỉ để tham khảo):
 
 ![Finely Crafted](docs/media/finely-reference.jpg)
 
@@ -76,9 +76,8 @@ Chi tiết từng phát hiện kèm bằng chứng: [references/finely-recipe.md
 
 | Bước | Việc | Ai quyết |
 |---|---|---|
-| 0 | Chốt web mẫu, món chính, ngân sách giờ và tiền, cỡ màn hình đích | Bạn |
-| 1 | Mổ web mẫu bằng REA qua Chrome có cổng debug | Claude |
-| 2 | Báo cáo 3 ngăn: quan sát được, suy luận, chưa rõ | Claude |
+| 0 | Chốt loại tiệm, cỡ phòng, món chính, các khu trong tiệm, ngân sách giờ và tiền, cỡ màn hình đích | Bạn |
+| 1-2 | Tuỳ chọn, khi có web tham khảo: phân tích bằng REA, báo cáo 3 ngăn (quan sát được, suy luận, chưa rõ) | Claude |
 | 3 | Plan + chi phí + 2 ảnh concept (Codex image gen) | **Bạn duyệt** |
 | 4-5 | Tải đồ Poly Haven CC0, món chính bằng AI 3D nếu cần (tuỳ chọn, tốn phí) | **Bạn duyệt món chính** |
 | 6 | Dựng cảnh Blender bằng script | Claude |
@@ -113,25 +112,25 @@ Copy thư mục skill vào `~/.claude/skills/`:
 
 ```bash
 # macOS / Linux
-git clone https://github.com/thanhthuduc99/reverse-3d-room ~/.claude/skills/reverse-3d-room
+git clone https://github.com/thanhthuduc99/showroom-3d-walk ~/.claude/skills/showroom-3d-walk
 
 # Windows (PowerShell)
-git clone https://github.com/thanhthuduc99/reverse-3d-room "$env:USERPROFILE\.claude\skills\reverse-3d-room"
+git clone https://github.com/thanhthuduc99/showroom-3d-walk "$env:USERPROFILE\.claude\skills\showroom-3d-walk"
 ```
 
 Mở Claude Code, gõ ví dụ:
 
 ```
-Dùng REA reverse web https://www.finely-crafted.com, rồi làm cho mình 1 phòng 3D nhìn thật như vậy
-cho quán cà phê. Lên plan, chi phí và ảnh concept trước.
+Làm showroom 3D cho quán cà phê của mình, khoảng 8x6 m, món chính là máy pha espresso và quầy bánh.
+Cuộn là đi bộ từ cửa vào tới quầy. Lên plan, chi phí và ảnh concept trước.
 ```
 
-Hoặc gọi thẳng `/reverse-3d-room`.
+Có web tham khảo thì dán link vào, skill sẽ phân tích nó trước. Hoặc gọi thẳng `/showroom-3d-walk`.
 
 ## Cấu trúc
 
 ```
-SKILL.md                     quy trình 10 bước, 4 cổng duyệt
+SKILL.md                     quy trình 10 bước (bước 1-2 tuỳ chọn), 4 cổng duyệt
 references/
   rea.md                     lệnh REA, khung báo cáo 3 ngăn
   finely-recipe.md           công thức Finely, so sánh render khung sẵn và bake lightmap
@@ -154,7 +153,7 @@ template/
 
 ## Ghi chú
 
-- Repo **không kèm bất kỳ asset nào của Finely Crafted** (code, ảnh, model, font, logo). Finely chỉ là web tham khảo để học cách làm. File tải về khi mổ web chỉ để phân tích, không dùng lại. DISCLAIMER của REA cũng ghi rõ điều này.
+- Repo **không kèm bất kỳ asset nào của Finely Crafted** (code, ảnh, model, font, logo). Finely chỉ là web tham khảo để học cách làm. File tải về khi phân tích web tham khảo chỉ để học, không dùng lại. DISCLAIMER của REA cũng ghi rõ điều này.
 - Repo không kèm model, texture, file `.blend` hay khung render. Đồ nội thất tải từ [Poly Haven](https://polyhaven.com) (CC0) bằng `fetch_ph.py`.
 - Hollow Oak là thương hiệu hư cấu. Khi làm web cho mình, đừng dùng logo hay nhãn thật của hãng khác.
 - Model 3D AI (fal.ai Hunyuan) là tuỳ chọn có tốn phí, khoảng 0,57 USD/món (ảnh mẫu 0,04 + 3D có PBR 0,525) ở thời điểm 10/2026.
